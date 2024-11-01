@@ -5,6 +5,7 @@ import ImageUploader from "./components/ImageUploader";
 import Slider from "./components/Slider";
 import PromptInput from "./components/PromptInput";
 import OutputImage from "./components/OutputImage";
+import { Instagram } from 'lucide-react';
 
 function App() {
   const [image, setImage] = useState(null);
@@ -76,6 +77,11 @@ function App() {
         </div>
       )}
       <OutputImage imageUrl={outputUrl} generationErrorMessage={generationErrorMessage} />
+
+      <div className="bg-blue-500 rounded-md px-4 py-2 w-max mx-auto flex">
+        <a href="https://www.instagram.com/owaish_3301" target="blank" className="mr-2">Created by Owaish </a>
+         <Instagram />
+      </div>
     </div>
   );
 }
