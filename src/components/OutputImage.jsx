@@ -36,7 +36,7 @@ export default function OutputImage({ imageUrl, generationErrorMessage }) {
           </button>
         </>
       ) : (
-        <p className="text-gray-500">{generationErrorMessage || ""}</p>
+        <p className="text-red-500">{generationErrorMessage || ""}</p>
       )}
     </div>
   );

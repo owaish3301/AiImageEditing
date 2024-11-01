@@ -1,4 +1,4 @@
-// src/App.jsx
+
 import { useState } from "react";
 import { Client } from "@gradio/client";
 import ImageUploader from "./components/ImageUploader";
@@ -6,6 +6,7 @@ import Slider from "./components/Slider";
 import PromptInput from "./components/PromptInput";
 import OutputImage from "./components/OutputImage";
 import { Instagram } from 'lucide-react';
+import LogConsole from "./components/LogConsole";
 
 function App() {
   const [image, setImage] = useState(null);
@@ -15,20 +16,41 @@ function App() {
   const [outputUrl, setOutputUrl] = useState("");
   const [generationErrorMessage, setGenerationErrorMessage] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [logs, setLogs] = useState([]);
+  const [isConsoleVisible, setIsConsoleVisible] = useState(false);
 
   const handleGenerate = async () => {
     if (!image || !prompt) return;
 
-    setIsGenerating(true); // Set loading state
+    setIsGenerating(true);
+    setLogs([]);
+    setIsConsoleVisible(true);
+    setGenerationErrorMessage(null)
+
     let client;
     try {
-      client = await Client.connect("lllyasviel/iclight-v2"); 
+      client = await Client.connect("lllyasviel/iclight-v2", {
+        events: ["status", "data"]
+      });
     } catch (error) {
       setGenerationErrorMessage("Error connecting to the server");
-      console.error('Error connecting to gradio client', error)
+      // console.error('Error connecting to gradio client', error);
+      setIsGenerating(false);
+      return;
     }
+
+    const logStatus = (message) => {
+      if (message.stage === "error") {
+        setIsGenerating(false);
+        setGenerationErrorMessage("An error occurred during the generation process.");
+      }
+        const logMessage = `Status: ${JSON.stringify(message, null, 2)}`;
+        setLogs((prevLogs) => [...prevLogs, logMessage]);
+        // console.log(message.stage);
+      };
+
     try {
-      const result = await client.predict("/process", {
+      const job = await client.submit("/process", {
       input_fg: image,
       bg_source: "None",
       prompt,
@@ -46,12 +68,18 @@ function App() {
       lowres_denoise: 0.98,
       highres_denoise: 0.95,
       });
-      console.log(result.data[0][0])
-      setOutputUrl(result.data[0][0].image.url);
+
+      for await (const message of job) {
+        if (message.type === "status") {
+          logStatus(message);
+        } else if (message.type === "data") {
+          setOutputUrl(message.data[0][0].image.url); // Set output image URL
+          setIsGenerating(false);
+        }
+      }
     } catch (error) {
       console.error("Error generating image", error);
-      setGenerationErrorMessage("Free GPU exhausted try again in some hours")
-    } finally{
+    } finally {
       setIsGenerating(false);
     }
   };
@@ -76,9 +104,10 @@ function App() {
           <p className="ml-2 text-gray-500">Processing image...</p>
         </div>
       )}
+      <LogConsole logs={logs} isVisible={isConsoleVisible} />
       <OutputImage imageUrl={outputUrl} generationErrorMessage={generationErrorMessage} />
 
-      <div className="bg-blue-500 rounded-md px-4 py-2 w-max mx-auto flex">
+      <div className="bg-blue-500 rounded-md px-4 py-2 w-max mx-auto flex mt-2">
         <a href="https://www.instagram.com/owaish_3301" target="blank" className="mr-2">Created by Owaish </a>
          <Instagram />
       </div>
