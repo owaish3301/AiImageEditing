@@ -22,7 +22,6 @@ function App() {
     let client;
     try {
       client = await Client.connect("lllyasviel/iclight-v2"); 
-      console.log(client); 
     } catch (error) {
       setGenerationErrorMessage("Error connecting to the server");
       console.error('Error connecting to gradio client', error)
@@ -50,7 +49,7 @@ function App() {
       setOutputUrl(result.data[0][0].image.url);
     } catch (error) {
       console.error("Error generating image", error);
-      setGenerationErrorMessage(error.message)
+      setGenerationErrorMessage("Free GPU exhausted try again in some hours")
     } finally{
       setIsGenerating(false);
     }
